@@ -1,2 +1,2 @@
 # hunting-queries
-Sharing hunting, reporting and otherwise useful KQL queries
+A collection of KQL queries for hunting, reporting, and security operations.
