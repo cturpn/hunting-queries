@@ -1,0 +1,41 @@
+let Devices =
+    DeviceInfo
+    | summarize arg_max(Timestamp, *) by DeviceId
+    | project
+        DeviceId,
+        DeviceName,
+        OSPlatform,
+        JoinType,
+        RegistryDeviceTag,
+        OnboardingStatus,
+        Timestamp;
+
+let CVEInfo =
+    DeviceTvmSoftwareVulnerabilitiesKB
+    | project
+        CveId,
+        CvssScore,
+        PublishedDate,
+        IsExploitAvailable,
+        VulnerabilityDescription;
+
+DeviceTvmSoftwareVulnerabilities
+| where isnotempty(DeviceId)
+| join kind=inner Devices on DeviceId
+| join kind=inner CVEInfo on CveId
+| summarize
+    CVECount = dcount(CveId),
+    CVEs = make_set(pack(
+        "CveId", CveId,
+        "CvssScore", CvssScore,
+        "PublishedDate", PublishedDate,
+        "ExploitAvailable", IsExploitAvailable
+    )),
+    DeviceName = any(DeviceName),
+    LastSeen = make_set(Timestamp),
+    OSPlatform = any(OSPlatform),
+    JoinType = any(JoinType),
+    OnboardingStatus = any(OnboardingStatus),
+    RegistryDeviceTag = make_set(RegistryDeviceTag)
+    by DeviceId
+| order by CVECount desc
